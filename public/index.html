@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ملعب بلدية رومين - حجز ملعب كرة القدم</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-futbol"></i>
+                <h1>ملعب بلدية رومين</h1>
+            </div>
+            <nav class="nav">
+                <a href="#home">الرئيسية</a>
+                <a href="#booking">الحجز</a>
+                <a href="#contact">التواصل</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h2>ملعب بلدية رومين</h2>
+                <p>استمتع بأفضل الأوقات مع أصدقائك في ملعب كرة قدم مجهز بأحدث المعايير - قرب ثانوية رومين الرسمية</p>
+                <a href="#booking" class="cta-button">احجز الآن</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Booking Section -->
+    <section id="booking" class="booking-section">
+        <div class="container">
+            <h2 class="section-title">احجز موعدك</h2>
+            
+            <!-- Date Selection -->
+            <div class="date-selection">
+                <label for="booking-date">اختر التاريخ:</label>
+                <input type="date" id="booking-date" class="date-input">
+            </div>
+
+            <!-- Time Slots -->
+            <div class="time-slots" id="time-slots">
+                <div class="loading">جاري تحميل الأوقات المتاحة...</div>
+            </div>
+
+            <!-- Booking Form -->
+            <div class="booking-form" id="booking-form" style="display: none;">
+                <h3>معلومات الحجز</h3>
+                <form id="booking-form-element">
+                    <div class="form-group">
+                        <label for="customer-name">الاسم:</label>
+                        <input type="text" id="customer-name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customer-phone">رقم الهاتف (8 أرقام):</label>
+                        <input type="tel" id="customer-phone" pattern="[0-9]{8}" minlength="8" maxlength="8" placeholder="مثال: 03123456" required>
+                    </div>
+                    
+                    <div class="selected-slot">
+                        <h4>الموعد المحدد:</h4>
+                        <p id="selected-date"></p>
+                        <p id="selected-time"></p>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">إرسال الطلب</button>
+                    <button type="button" class="cancel-btn" onclick="cancelBooking()">إلغاء</button>
+                </form>
+            </div>
+
+            <!-- Success Message -->
+            <div class="success-message" id="success-message" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <h3>تم إرسال طلبك بنجاح!</h3>
+                <p>سيتم التواصل معك قريباً لتأكيد الحجز</p>
+                <button onclick="resetBooking()" class="btn-primary">حجز جديد</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <h2 class="section-title">التواصل معنا</h2>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <p>العنوان: قرب ثانوية رومين الرسمية</p>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-clock"></i>
+                    <p>أوقات العمل: من 1:00 PM إلى 12:00 AM</p>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-lira-sign"></i>
+                    <p>السعر: <span id="rental-price">50,000</span> ليرة لبنانية لكل ساعة ونصف</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 ملعب بلدية رومين. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <!-- Mobile Navigation -->
+    <nav class="mobile-nav" id="mobile-nav">
+        <div class="mobile-nav-item" data-section="home">
+            <i class="fas fa-home"></i>
+            <span>الرئيسية</span>
+        </div>
+        <div class="mobile-nav-item" data-section="booking">
+            <i class="fas fa-calendar-plus"></i>
+            <span>حجز</span>
+        </div>
+        <div class="mobile-nav-item" data-section="contact">
+            <i class="fas fa-phone"></i>
+            <span>تواصل معنا</span>
+        </div>
+    </nav>
+
+    <!-- Login Button -->
+    <button class="login-btn" id="login-btn">
+        <i class="fas fa-sign-in-alt"></i>
+        <span>تسجيل الدخول</span>
+    </button>
+
+    <!-- WhatsApp Button -->
+    <div class="whatsapp-button" id="whatsapp-button">
+        <i class="fab fa-whatsapp"></i>
+        <span>تواصل معنا</span>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="login-modal" id="login-modal">
+        <div class="login-modal-content">
+            <span class="close-modal" id="close-modal">&times;</span>
+            <h2>تسجيل الدخول</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-username">اسم المستخدم:</label>
+                    <input type="text" id="login-username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">كلمة المرور:</label>
+                    <input type="password" id="login-password" name="password" required>
+                </div>
+                <button type="submit">تسجيل الدخول</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html> 

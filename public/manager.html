@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم مدير الملعب - ملعب بلدية رومين</title>
+    <link rel="stylesheet" href="/manager-styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h2>تسجيل الدخول - مدير الملعب</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">اسم المستخدم:</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">كلمة المرور:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn-primary">تسجيل الدخول</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Manager Dashboard -->
+    <div id="manager-dashboard" style="display: none;">
+        <!-- Header -->
+        <header class="manager-header">
+            <div class="container">
+                <div class="manager-logo">
+                    <i class="fas fa-futbol"></i>
+                    <h1>لوحة تحكم مدير الملعب - ملعب بلدية رومين</h1>
+                </div>
+                <div class="manager-user">
+                    <span id="manager-name">مدير الملعب</span>
+                    <button id="logout-btn" class="btn-secondary">تسجيل الخروج</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="manager-nav">
+            <div class="container">
+                <ul class="nav-tabs">
+                    <li><a href="#dashboard" class="nav-link active">الرئيسية</a></li>
+                    <li><a href="#schedule" class="nav-link">جدول المباريات</a></li>
+                    <li><a href="#reports" class="nav-link">التقارير</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="manager-main">
+            <div class="container">
+                <!-- Dashboard Tab -->
+                <div id="dashboard" class="tab-content active">
+                    <h2>نظرة عامة</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="today-matches">0</h3>
+                                <p>مباريات اليوم</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-money-bill-wave"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="unpaid-matches">0</h3>
+                                <p>مباريات غير مدفوعة</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="total-handled">0</h3>
+                                <p>إجمالي المباريات المُدارة</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="total-fees">0</h3>
+                                <p>إجمالي الرسوم المكتسبة (ليرة لبنانية)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions">
+                        <h3>الإجراءات السريعة</h3>
+                        <div class="action-cards">
+                            <div class="action-card" onclick="switchTab('schedule')">
+                                <i class="fas fa-calendar-check"></i>
+                                <h4>جدول اليوم</h4>
+                                <p>عرض مباريات اليوم</p>
+                            </div>
+                            <div class="action-card" onclick="markAllPaid()">
+                                <i class="fas fa-check-double"></i>
+                                <h4>تأكيد جميع المدفوعات</h4>
+                                <p>تأكيد دفع جميع مباريات اليوم</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedule Tab -->
+                <div id="schedule" class="tab-content">
+                    <div class="tab-header">
+                        <h2>جدول المباريات</h2>
+                        <div class="filters">
+                            <input type="date" id="schedule-date" class="filter-input">
+                            <button id="load-schedule" class="btn-primary">تحميل الجدول</button>
+                        </div>
+                    </div>
+                    
+                    <div class="schedule-container">
+                        <div class="schedule-grid" id="schedule-grid">
+                            <div class="loading">جاري تحميل جدول المباريات...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Tab -->
+                <div id="reports" class="tab-content">
+                    <h2>تقاريري</h2>
+                    <div class="reports-container">
+                        <div class="report-filters">
+                            <select id="report-period">
+                                <option value="daily">يومي</option>
+                                <option value="weekly">أسبوعي</option>
+                                <option value="monthly">شهري</option>
+                            </select>
+                            <input type="date" id="report-date">
+                            <button id="generate-report" class="btn-primary">إنشاء التقرير</button>
+                        </div>
+                        <div id="report-results" class="report-results">
+                            <div class="report-stats">
+                                <div class="report-stat">
+                                    <h3 id="matches-handled">0</h3>
+                                    <p>المباريات المُدارة</p>
+                                </div>
+                                <div class="report-stat">
+                                    <h3 id="payments-collected">0</h3>
+                                    <p>المدفوعات المحصلة</p>
+                                </div>
+                                <div class="report-stat">
+                                    <h3 id="fees-earned">0</h3>
+                                    <p>الرسوم المكتسبة (ليرة لبنانية)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/manager-script.js"></script>
+</body>
+</html> 

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الإدارة - ملعب بلدية رومين</title>
+    <link rel="stylesheet" href="/admin-styles.css?v=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h2>تسجيل الدخول - الإدارة</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">اسم المستخدم:</label>
+                    <input type="text" id="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">كلمة المرور:</label>
+                    <input type="password" id="password" required>
+                </div>
+                <button type="submit" class="btn-primary">تسجيل الدخول</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" style="display: none;">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="container">
+                <div class="admin-logo">
+                    <i class="fas fa-cogs"></i>
+                    <h1>لوحة تحكم الإدارة - ملعب بلدية رومين</h1>
+                </div>
+                <div class="admin-user">
+                    <span id="admin-username">الإدارة</span>
+                    <button id="logout-btn" class="btn-secondary">تسجيل الخروج</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="admin-nav">
+            <div class="container">
+                <ul class="nav-tabs">
+                    <li><a href="#dashboard" class="nav-link active">الرئيسية</a></li>
+                    <li><a href="#bookings" class="nav-link">الحجوزات</a></li>
+                    <li><a href="#blacklist" class="nav-link">القائمة السوداء</a></li>
+                    <li><a href="#users" class="nav-link">إدارة المستخدمين</a></li>
+                    <li><a href="#settings" class="nav-link">الإعدادات</a></li>
+
+                    <li><a href="#reports" class="nav-link">التقارير</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="container">
+                <!-- Dashboard Tab -->
+                <div id="dashboard" class="tab-content active">
+                    <h2>نظرة عامة</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="today-bookings">0</h3>
+                                <p>حجوزات اليوم</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="pending-bookings">0</h3>
+                                <p>حجوزات معلقة</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="month-bookings">0</h3>
+                                <p>حجوزات هذا الشهر</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-ban"></i>
+                            </div>
+                            <div class="stat-info">
+                                <h3 id="blacklist-count">0</h3>
+                                <p>القائمة السوداء</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bookings Tab -->
+                <div id="bookings" class="tab-content">
+                    <div class="tab-header">
+                        <h2>إدارة الحجوزات</h2>
+                        <div class="filters">
+                            <input type="date" id="booking-filter-date" class="filter-input">
+                            <select id="booking-filter-status" class="filter-input">
+                                <option value="">جميع الحالات</option>
+                                <option value="pending">معلق</option>
+                                <option value="confirmed">مؤكد</option>
+                                <option value="cancelled">ملغى</option>
+                            </select>
+                            <button id="filter-bookings" class="btn-primary">تصفية</button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table id="bookings-table">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ</th>
+                                    <th>الوقت</th>
+                                    <th>الاسم</th>
+                                    <th>الهاتف</th>
+                                    <th>الحالة</th>
+                                    <th>الدفع</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bookings-tbody">
+                                <tr>
+                                    <td colspan="7" class="loading">جاري التحميل...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Blacklist Tab -->
+                <div id="blacklist" class="tab-content">
+                    <div class="tab-header">
+                        <h2>القائمة السوداء</h2>
+                        <button id="add-blacklist-btn" class="btn-primary">إضافة إلى القائمة السوداء</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="blacklist-table">
+                            <thead>
+                                <tr>
+                                    <th>الاسم</th>
+                                    <th>الهاتف</th>
+                                    <th>السبب</th>
+                                    <th>تاريخ الإضافة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="blacklist-tbody">
+                                <tr>
+                                    <td colspan="5" class="loading">جاري التحميل...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Users Management Tab -->
+                <div id="users" class="tab-content">
+                    <h2>إدارة المستخدمين</h2>
+                    <div class="users-management">
+                        <div class="user-section">
+                            <h3>حساب الإدارة</h3>
+                            <form id="admin-password-form" class="password-form">
+                                <div class="form-group">
+                                    <label for="admin-current-password">كلمة المرور الحالية:</label>
+                                    <input type="password" id="admin-current-password" name="current_password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="admin-new-username">اسم المستخدم الجديد:</label>
+                                    <input type="text" id="admin-new-username" name="new_username" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="admin-new-password">كلمة المرور الجديدة:</label>
+                                    <input type="password" id="admin-new-password" name="new_password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="admin-confirm-password">تأكيد كلمة المرور الجديدة:</label>
+                                    <input type="password" id="admin-confirm-password" name="confirm_password" required>
+                                </div>
+                                <button type="submit" class="btn-primary">تحديث حساب الإدارة</button>
+                            </form>
+                        </div>
+                        
+                        <div class="user-section">
+                            <h3>حساب مدير الملعب</h3>
+                            <form id="manager-password-form" class="password-form">
+                                <div class="form-group">
+                                    <label for="manager-current-username">اسم المستخدم الحالي:</label>
+                                    <input type="text" id="manager-current-username" name="current_username" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="manager-new-username">اسم المستخدم الجديد:</label>
+                                    <input type="text" id="manager-new-username" name="new_username" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="manager-new-password">كلمة المرور الجديدة:</label>
+                                    <input type="password" id="manager-new-password" name="new_password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="manager-confirm-password">تأكيد كلمة المرور الجديدة:</label>
+                                    <input type="password" id="manager-confirm-password" name="confirm_password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="manager-name">اسم المدير:</label>
+                                    <input type="text" id="manager-name" name="manager_name" required>
+                                </div>
+                                <button type="submit" class="btn-primary">تحديث حساب المدير</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div id="settings" class="tab-content">
+                    <h2>الإعدادات</h2>
+                    <div class="settings-container">
+                        <form id="settings-form">
+                            <div class="settings-group">
+                                <h3>إعدادات الحجز</h3>
+                                <div class="form-group">
+                                    <label for="rental-price">سعر الإيجار (ليرة لبنانية):</label>
+                                    <input type="number" id="rental-price" name="rental_price" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="manager-fee">رسوم المدير (ليرة لبنانية):</label>
+                                    <input type="number" id="manager-fee" name="playground_manager_fee" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="start-time">وقت البداية:</label>
+                                    <input type="time" id="start-time" name="start_time">
+                                </div>
+                                <div class="form-group">
+                                    <label for="end-time">وقت النهاية:</label>
+                                    <input type="time" id="end-time" name="end_time">
+                                </div>
+                                <div class="form-group">
+                                    <label for="slot-duration">مدة الحجز (دقيقة):</label>
+                                    <input type="number" id="slot-duration" name="slot_duration" min="30" step="30">
+                                </div>
+                            </div>
+                            
+                            <div class="settings-group">
+                                <h3>إعدادات التواصل</h3>
+                                <div class="form-group">
+                                    <label for="whatsapp-number">رقم الواتساب:</label>
+                                    <input type="tel" id="whatsapp-number" name="whatsapp_number">
+                                </div>
+                            </div>
+                            
+                            <div class="settings-group">
+                                <h3>إعدادات الموقع</h3>
+                                <div class="form-group">
+                                    <label for="site-title">عنوان الموقع:</label>
+                                    <input type="text" id="site-title" name="site_title">
+                                </div>
+                                <div class="form-group">
+                                    <label for="site-description">وصف الموقع:</label>
+                                    <textarea id="site-description" name="site_description"></textarea>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn-primary">حفظ الإعدادات</button>
+                        </form>
+                    </div>
+                </div>
+
+
+
+                <!-- Reports Tab -->
+                <div id="reports" class="tab-content">
+                    <h2>التقارير</h2>
+                    <div class="reports-container">
+                        <div class="report-filters">
+                            <select id="report-period">
+                                <option value="daily">يومي</option>
+                                <option value="weekly">أسبوعي</option>
+                                <option value="monthly">شهري</option>
+                            </select>
+                            <input type="date" id="report-date">
+                            <button id="generate-report" class="btn-primary">إنشاء التقرير</button>
+                        </div>
+                        <div id="report-results" class="report-results">
+                            <div class="report-stats">
+                                <div class="report-stat">
+                                    <h3 id="total-bookings">0</h3>
+                                    <p>إجمالي الحجوزات</p>
+                                </div>
+                                <div class="report-stat">
+                                    <h3 id="confirmed-bookings">0</h3>
+                                    <p>حجوزات مؤكدة</p>
+                                </div>
+                                <div class="report-stat">
+                                    <h3 id="paid-bookings">0</h3>
+                                    <p>حجوزات مدفوعة</p>
+                                </div>
+                                <div class="report-stat">
+                                    <h3 id="total-revenue">0</h3>
+                                    <p>إجمالي الإيرادات (ريال)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="blacklist-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>إضافة إلى القائمة السوداء</h2>
+            <form id="blacklist-form">
+                <div class="form-group">
+                    <label for="blacklist-name">الاسم:</label>
+                    <input type="text" id="blacklist-name" required>
+                </div>
+                <div class="form-group">
+                                            <label for="blacklist-phone">الهاتف (8 أرقام):</label>
+                        <input type="tel" id="blacklist-phone" pattern="[0-9]{8}" minlength="8" maxlength="8" placeholder="مثال: 12345678" required>
+                </div>
+                <div class="form-group">
+                    <label for="blacklist-reason">السبب:</label>
+                    <textarea id="blacklist-reason" required></textarea>
+                </div>
+                <button type="submit" class="btn-primary">إضافة</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/admin-script.js"></script>
+</body>
+</html> 
