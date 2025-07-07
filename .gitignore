@@ -1,0 +1,5 @@
+# Example .gitignore content
+node_modules/
+dist/
+.env
+*.log
