@@ -68,12 +68,61 @@ router.get('/slots/:date', (req, res) => {
 // Submit booking
 router.post('/submit', (req, res) => {
   const { name, phone, date, start_time, end_time } = req.body;
-  
-  // Validate phone number (must be exactly 8 digits)
-  const phoneRegex = /^[0-9]{8}$/;
+
+  // Validate phone number (existing code with updated regex)
+  const phoneRegex = /^(03|70|71|76|78|79|81)[0-9]{6}$/; // Ensure this is the updated regex
   if (!phoneRegex.test(phone)) {
-    return res.status(400).json({ error: 'رقم الهاتف يجب أن يكون 8 أرقام بالضبط' });
+    return res.status(400).json({ error: 'رقم الهاتف يجب أن يكون 8 أرقام بالضبط و يبدأ بـ 03، 70، 71، 76، 78، 79 أو 81' });
   }
+
+  // Check if user is blacklisted (existing code)
+  db.get('SELECT * FROM blacklist WHERE name = ? OR phone = ?', [name, phone], (err, blacklisted) => {
+    if (err) {
+      console.error('Database error checking blacklist:', err); // Add specific error logging
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (blacklisted) {
+      return res.status(403).json({ error: 'أنت غير مسموح لك بإجراء الحجوزات. يرجى التواصل مع الإدارة.' }); // More user-friendly message
+    }
+
+    // NEW: Check for existing booking by the same user on the same date
+    db.get('SELECT * FROM bookings WHERE name = ? AND phone = ? AND date = ? AND status != "cancelled"',
+      [name, phone, date], (err, existingBookingToday) => {
+        if (err) {
+          console.error('Database error checking for existing booking today:', err); // Add specific error logging
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (existingBookingToday) {
+          // If a booking already exists for this user on this date (and it's not cancelled)
+          return res.status(400).json({ error: 'لديك حجز آخر مؤكد أو معلق في نفس التاريخ.' }); // Informative error
+        }
+
+        // Check if slot is still available (existing code)
+        db.get('SELECT * FROM bookings WHERE date = ? AND start_time = ? AND status != "cancelled"', [date, start_time], (err, existing) => {
+          if (err) {
+            console.error('Database error checking slot availability:', err); // Add specific error logging
+            return res.status(500).json({ error: 'Database error' });
+          }
+
+          if (existing) {
+            return res.status(400).json({ error: 'هذا الموعد لم يعد متاحًا.' }); // Informative error
+          }
+
+          // Insert booking (existing code)
+          db.run('INSERT INTO bookings (name, phone, date, start_time, end_time) VALUES (?, ?, ?, ?, ?)',
+            [name, phone, date, start_time, end_time], function(err) { // Use function(err) for 'this.lastID' if needed later
+            if (err) {
+              console.error('Database error inserting booking:', err); // Add specific error logging
+              return res.status(500).json({ error: 'Database error' });
+            }
+
+            res.json({ message: 'تم إرسال طلبك بنجاح. سيتم التواصل معك قريباً لتأكيد الحجز.' }); // Updated message
+          });
+        });
+      });
+  });
   
   // Check if user is blacklisted
   db.get('SELECT * FROM blacklist WHERE name = ? OR phone = ?', [name, phone], (err, blacklisted) => {

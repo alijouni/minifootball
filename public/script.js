@@ -166,65 +166,128 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Handle booking form submission
-    function handleBookingSubmission(e) {
-        e.preventDefault();
-        
-        if (!selectedSlot) {
-            alert('يرجى اختيار وقت أولاً');
-            return;
-        }
-        
-        const formData = new FormData(bookingFormElement);
-        const bookingData = {
-            name: document.getElementById('customer-name').value,
-            phone: document.getElementById('customer-phone').value,
-            date: currentDate,
-            start_time: selectedSlot.start,
-            end_time: selectedSlot.end
-        };
-        
-        // Validate form
-        if (!bookingData.name || !bookingData.phone) {
-            alert('يرجى ملء جميع الحقول');
-            return;
-        }
-        
-        // Validate phone number (must be exactly 8 digits)
-        const phoneRegex = /^[0-9]{8}$/;
-        if (!phoneRegex.test(bookingData.phone)) {
-            alert('رقم الهاتف يجب أن يكون 8 أرقام بالضبط');
-            return;
-        }
-        
-        // Submit booking
-        const submitButton = bookingFormElement.querySelector('.submit-btn');
-        submitButton.disabled = true;
-        submitButton.textContent = 'جاري الإرسال...';
-        
-        fetch('/api/bookings/submit', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(bookingData)
+function handleBookingSubmission(e) {
+    e.preventDefault();
+
+    // --- MOVE THIS LINE UP ---
+    const submitButton = bookingFormElement.querySelector('.submit-btn');
+    // --- TO HERE ---
+
+    // Immediately disable button and change text at the start of submission attempt
+    submitButton.disabled = true;
+    submitButton.textContent = 'جاري الإرسال...';
+
+    if (!selectedSlot) {
+        alert('يرجى اختيار وقت أولاً');
+        submitButton.disabled = false; // Now submitButton is defined here
+        submitButton.textContent = 'إرسال الطلب';
+        return;
+    }
+
+    const formData = new FormData(bookingFormElement);
+    const bookingData = {
+        name: document.getElementById('customer-name').value,
+        phone: document.getElementById('customer-phone').value,
+        date: currentDate,
+        start_time: selectedSlot.start,
+        end_time: selectedSlot.end
+    };
+
+    // Validate form
+    if (!bookingData.name || !bookingData.phone) {
+        alert('يرجى ملء جميع الحقول');
+        submitButton.disabled = false; // Now submitButton is defined here
+        submitButton.textContent = 'إرسال الطلب';
+        return;
+    }
+
+    // Validate phone number (your existing updated regex validation)
+    const phoneRegex = /^(03|70|71|76|78|79|81)[0-9]{6}$/;
+    if (!phoneRegex.test(bookingData.phone)) {
+        alert('رقم الهاتف يجب أن يكون 8 أرقام بالضبط و يبدأ بـ 03، 70، 71، 76، 78، 79 أو 81');
+        submitButton.disabled = false; // Now submitButton is defined here
+        submitButton.textContent = 'إرسال الطلب';
+        return;
+    }
+
+    // NEW CLIENT-SIDE CHECK: Check for existing bookings by this user for the selected date
+// Locate this section in your handleBookingSubmission function:
+
+    // NEW CLIENT-SIDE CHECK: Check for existing bookings by this user for the selected date
+    fetch(`/api/bookings/status/${bookingData.phone}`)
+        .then(response => {
+            // Handle non-OK HTTP responses from the first fetch call (/api/bookings/status/:phone)
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.error || `Failed to check user bookings (status: ${response.status})`);
+                });
+            }
+            return response.json();
         })
-        .then(response => response.json())
+        .then(userBookings => {
+            const hasExistingBookingToday = userBookings.some(booking =>
+                booking.date === bookingData.date &&
+                booking.status !== 'cancelled'
+            );
+
+            if (hasExistingBookingToday) {
+                alert('لديك حجز آخر مؤكد أو معلق في نفس التاريخ. لا يمكنك حجز أكثر من موعد واحد في اليوم.', 'تنبيه');
+                // Crucially: Return a rejected promise to stop the chain from proceeding
+                // and push control directly to the .catch() block.
+                return Promise.reject(new Error('User already has a booking today.'));
+            }
+
+            // Only proceed to submit the booking if no existing active booking is found for today
+            return fetch('/api/bookings/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bookingData)
+            });
+        })
+        .then(response => {
+            // This .then() block will only be reached if the previous step successfully returned
+            // the fetch promise for '/api/bookings/submit'.
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.error || `Booking submission failed (status: ${response.status})`);
+                });
+            }
+            return response.json();
+        })
         .then(data => {
+            // This .then() block will only be reached if the booking submission was successful
             if (data.message) {
                 showSuccessMessage();
+                alert(data.message, 'نجاح');
             } else {
-                throw new Error(data.error || 'حدث خطأ غير متوقع');
+                // Fallback for unexpected successful response without a message
+                throw new Error('Unexpected success response from server.');
             }
         })
         .catch(error => {
+            // This single .catch() block handles errors from any part of the chain:
+            // 1. Network errors during either fetch call.
+            // 2. Errors thrown by non-OK responses (e.g., from response.json().then(...)).
+            // 3. The rejected promise from `Promise.reject(new Error('User already has a booking today.'))`.
+
             console.error('Error submitting booking:', error);
-            alert('حدث خطأ في الإرسال: ' + error.message);
+
+            // Only show a generic alert if it's not the specific "user already has a booking" error,
+            // as that specific message has already been shown by `alert` earlier in the chain.
+            if (error.message !== 'User already has a booking today.') {
+                alert('حدث خطأ في الإرسال: ' + error.message, 'خطأ');
+            }
         })
         .finally(() => {
+            // This block will always run, ensuring the submit button state is reset
             submitButton.disabled = false;
             submitButton.textContent = 'إرسال الطلب';
         });
-    }
+
+// Continue with the rest of your handleBookingSubmission function (if any)
+};
     
     // Show success message
     function showSuccessMessage() {
