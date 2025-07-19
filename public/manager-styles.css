@@ -596,6 +596,56 @@ body {
     }
 }
 
+/* Add this to your existing modal styles or as new sections */
+.modal-content.small-modal {
+    max-width: 380px; /* Adjust size as needed */
+    padding: 1.5rem;
+    margin-top: 10%; /* Adjust vertical position */
+}
+
+.modal-content.small-modal h3 {
+    font-size: 1.4rem;
+    margin-bottom: 1rem;
+    color: #333;
+    text-align: center;
+}
+
+.modal-content.small-modal p {
+    font-size: 1rem;
+    color: #555;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.modal-content.small-modal .btn-primary,
+.modal-content.small-modal .modal-actions button {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.8rem 1.5rem;
+    font-size: 0.9rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.close-custom-modal {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: #667eea;
+    transition: color 0.3s ease;
+}
+
+.close-custom-modal:hover {
+    color: #764ba2;
+}
+
 /* Animations */
 @keyframes fadeIn {
     from {

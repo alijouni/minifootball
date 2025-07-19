@@ -99,12 +99,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentManager = data.user;
                 showDashboard();
             } else {
-                alert('خطأ في تسجيل الدخول: ' + (data.error || 'بيانات خاطئة'));
+                showAlert('خطأ في تسجيل الدخول: ' + (data.error || 'بيانات خاطئة'));
             }
         })
         .catch(error => {
             console.error('Login error:', error);
-            alert('حدث خطأ في تسجيل الدخول');
+            showAlert('حدث خطأ في تسجيل الدخول');
         });
     }
     
@@ -240,31 +240,34 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Mark as paid
     window.markAsPaid = function(bookingId) {
-        if (!confirm('هل أنت متأكد من تأكيد الدفع؟')) return;
-        
+       showConfirm('هل أنت متأكد من تأكيد الدفع؟', 'تأكيد الدفع', (result) => {
+    if (result) {
+        // Original fetch call goes here
         fetch(`/api/manager/mark-paid/${bookingId}`, { method: 'POST' })
             .then(response => response.json())
             .then(data => {
                 if (data.message) {
-                    alert('تم تأكيد الدفع بنجاح');
+                    showAlert('تم تأكيد الدفع بنجاح', 'نجاح');
                     loadSchedule();
                     loadDashboardStats();
                 } else {
-                    alert('حدث خطأ: ' + (data.error || 'خطأ غير محدد'));
+                    showAlert('حدث خطأ: ' + (data.error || 'خطأ غير محدد'), 'خطأ');
                 }
             })
             .catch(error => {
                 console.error('Error marking as paid:', error);
-                alert('حدث خطأ في تأكيد الدفع');
+                showAlert('حدث خطأ في تأكيد الدفع', 'خطأ');
             });
+    }
+});
     };
     
     // Mark all as paid
     window.markAllPaid = function() {
-        if (!confirm('هل أنت متأكد من تأكيد دفع جميع مباريات اليوم؟')) return;
-        
+       showConfirm('هل أنت متأكد من تأكيد دفع جميع مباريات اليوم؟', 'تأكيد جميع المدفوعات', (result) => {
+    if (result) {
+        // Original fetch call goes here
         const today = new Date().toISOString().split('T')[0];
-        
         fetch('/api/manager/mark-all-paid', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -273,17 +276,19 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.message) {
-                alert(`تم تأكيد دفع ${data.count} مباراة بنجاح`);
+                showAlert(`تم تأكيد دفع ${data.count} مباراة بنجاح`, 'نجاح');
                 loadSchedule();
                 loadDashboardStats();
             } else {
-                alert('حدث خطأ: ' + (data.error || 'خطأ غير محدد'));
+                showAlert('حدث خطأ: ' + (data.error || 'خطأ غير محدد'), 'خطأ');
             }
         })
         .catch(error => {
             console.error('Error marking all as paid:', error);
-            alert('حدث خطأ في تأكيد المدفوعات');
+            showAlert('حدث خطأ في تأكيد المدفوعات', 'خطأ');
         });
+    }
+});
     };
     
     // Generate report
@@ -292,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const date = reportDate.value;
         
         if (!date) {
-            alert('يرجى اختيار تاريخ');
+            showAlert('يرجى اختيار تاريخ');
             return;
         }
         
@@ -303,7 +308,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error generating report:', error);
-                alert('حدث خطأ في إنشاء التقرير');
+                showAlert('حدث خطأ في إنشاء التقرير');
             });
     }
     
@@ -343,6 +348,76 @@ document.addEventListener('DOMContentLoaded', function() {
         const ampm = hours >= 12 ? 'PM' : 'AM';
         return `${hour12}:${minutes} ${ampm}`;
     }
+
+    // --- Custom Alert Function ---
+function showAlert(message, title = 'تنبيه') {
+    const alertModal = document.getElementById('custom-alert-modal');
+    document.getElementById('custom-alert-title').textContent = title;
+    document.getElementById('custom-alert-message').textContent = message;
+    alertModal.style.display = 'flex'; // Use 'flex' for centering
+
+    const closeBtn = document.getElementById('close-alert-modal');
+    const okBtn = document.getElementById('custom-alert-ok-btn');
+
+    const closeAlert = () => {
+        alertModal.style.display = 'none';
+        closeBtn.removeEventListener('click', closeAlert);
+        okBtn.removeEventListener('click', closeAlert);
+        alertModal.removeEventListener('click', outsideClickAlert);
+    };
+
+    const outsideClickAlert = (event) => {
+        if (event.target === alertModal) {
+            closeAlert();
+        }
+    };
+
+    closeBtn.addEventListener('click', closeAlert);
+    okBtn.addEventListener('click', closeAlert);
+    alertModal.addEventListener('click', outsideClickAlert);
+}
+
+// --- Custom Confirmation Function ---
+function showConfirm(message, title = 'تأكيد', callback) {
+    const confirmModal = document.getElementById('custom-confirm-modal');
+    document.getElementById('custom-confirm-title').textContent = title;
+    document.getElementById('custom-confirm-message').textContent = message;
+    confirmModal.style.display = 'flex'; // Use 'flex' for centering
+
+    const closeBtn = document.getElementById('close-confirm-modal');
+    const yesBtn = document.getElementById('custom-confirm-yes-btn');
+    const noBtn = document.getElementById('custom-confirm-no-btn');
+
+    const closeConfirm = () => {
+        confirmModal.style.display = 'none';
+        closeBtn.removeEventListener('click', closeConfirm);
+        yesBtn.removeEventListener('click', onYes);
+        noBtn.removeEventListener('click', onNo);
+        confirmModal.removeEventListener('click', outsideClickConfirm);
+    };
+
+    const onYes = () => {
+        callback(true);
+        closeConfirm();
+    };
+
+    const onNo = () => {
+        callback(false);
+        closeConfirm();
+    };
+
+    const outsideClickConfirm = (event) => {
+        if (event.target === confirmModal) {
+            callback(false); // Consider clicking outside as 'No'
+            closeConfirm();
+        }
+    };
+
+    closeBtn.addEventListener('click', closeConfirm);
+    yesBtn.addEventListener('click', onYes);
+    noBtn.addEventListener('click', onNo);
+    confirmModal.addEventListener('click', outsideClickConfirm);
+}
     
     // Auto-refresh dashboard every 5 minutes
     setInterval(() => {

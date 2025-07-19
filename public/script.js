@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         if (!selectedSlot) {
-            alert('يرجى اختيار وقت أولاً');
+            showAlert('يرجى اختيار وقت أولاً');
             return;
         }
         
@@ -185,14 +185,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Validate form
         if (!bookingData.name || !bookingData.phone) {
-            alert('يرجى ملء جميع الحقول');
+            showAlert('يرجى ملء جميع الحقول');
             return;
         }
         
         // Validate phone number (must be exactly 8 digits)
         const phoneRegex = /^[0-9]{8}$/;
         if (!phoneRegex.test(bookingData.phone)) {
-            alert('رقم الهاتف يجب أن يكون 8 أرقام بالضبط');
+            showAlert('رقم الهاتف يجب أن يكون 8 أرقام بالضبط');
             return;
         }
         
@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error submitting booking:', error);
-            alert('حدث خطأ في الإرسال: ' + error.message);
+            showAlert('حدث خطأ في الإرسال: ' + error.message);
         })
         .finally(() => {
             submitButton.disabled = false;
@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const password = document.getElementById('login-password').value;
         
         if (!username || !password) {
-            alert('يرجى ملء جميع الحقول');
+            showAlert('يرجى ملء جميع الحقول');
             return;
         }
         
@@ -390,12 +390,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = '/manager';
             } else if (data) {
                 // Neither admin nor manager
-                alert('بيانات تسجيل الدخول غير صحيحة');
+                showAlert('بيانات تسجيل الدخول غير صحيحة');
             }
         })
         .catch(error => {
             console.error('Login error:', error);
-            alert('حدث خطأ في تسجيل الدخول');
+            showAlert('حدث خطأ في تسجيل الدخول');
         })
         .finally(() => {
             button.disabled = false;
@@ -452,6 +452,76 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         }
+
+        // --- Custom Alert Function ---
+function showAlert(message, title = 'تنبيه') {
+    const alertModal = document.getElementById('custom-alert-modal');
+    document.getElementById('custom-alert-title').textContent = title;
+    document.getElementById('custom-alert-message').textContent = message;
+    alertModal.style.display = 'flex'; // Use 'flex' for centering
+
+    const closeBtn = document.getElementById('close-alert-modal');
+    const okBtn = document.getElementById('custom-alert-ok-btn');
+
+    const closeAlert = () => {
+        alertModal.style.display = 'none';
+        closeBtn.removeEventListener('click', closeAlert);
+        okBtn.removeEventListener('click', closeAlert);
+        alertModal.removeEventListener('click', outsideClickAlert);
+    };
+
+    const outsideClickAlert = (event) => {
+        if (event.target === alertModal) {
+            closeAlert();
+        }
+    };
+
+    closeBtn.addEventListener('click', closeAlert);
+    okBtn.addEventListener('click', closeAlert);
+    alertModal.addEventListener('click', outsideClickAlert);
+}
+
+// --- Custom Confirmation Function ---
+function showConfirm(message, title = 'تأكيد', callback) {
+    const confirmModal = document.getElementById('custom-confirm-modal');
+    document.getElementById('custom-confirm-title').textContent = title;
+    document.getElementById('custom-confirm-message').textContent = message;
+    confirmModal.style.display = 'flex'; // Use 'flex' for centering
+
+    const closeBtn = document.getElementById('close-confirm-modal');
+    const yesBtn = document.getElementById('custom-confirm-yes-btn');
+    const noBtn = document.getElementById('custom-confirm-no-btn');
+
+    const closeConfirm = () => {
+        confirmModal.style.display = 'none';
+        closeBtn.removeEventListener('click', closeConfirm);
+        yesBtn.removeEventListener('click', onYes);
+        noBtn.removeEventListener('click', onNo);
+        confirmModal.removeEventListener('click', outsideClickConfirm);
+    };
+
+    const onYes = () => {
+        callback(true);
+        closeConfirm();
+    };
+
+    const onNo = () => {
+        callback(false);
+        closeConfirm();
+    };
+
+    const outsideClickConfirm = (event) => {
+        if (event.target === confirmModal) {
+            callback(false); // Consider clicking outside as 'No'
+            closeConfirm();
+        }
+    };
+
+    closeBtn.addEventListener('click', closeConfirm);
+    yesBtn.addEventListener('click', onYes);
+    noBtn.addEventListener('click', onNo);
+    confirmModal.addEventListener('click', outsideClickConfirm);
+}
         
         // Listen for scroll events
         window.addEventListener('scroll', updateActiveNavItem);
