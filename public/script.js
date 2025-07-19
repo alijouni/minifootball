@@ -190,9 +190,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Validate phone number (must be exactly 8 digits)
-        const phoneRegex = /^[0-9]{8}$/;
+        const phoneRegex = /^(03|70|71|76|78|79|81)[0-9]{6}$/;
         if (!phoneRegex.test(bookingData.phone)) {
-            alert('رقم الهاتف يجب أن يكون 8 أرقام بالضبط');
+            alert('رقم الهاتف يجب أن يكون 8 أرقام ويبدأ بأحد الأرقام المحددة (03, 70, 71, 76, 78, 79, 81)' );
             return;
         }
         
