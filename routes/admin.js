@@ -97,7 +97,7 @@ router.post('/blacklist', requireAdmin, (req, res) => {
   const { name, phone, reason } = req.body;
   
   // Validate phone number if provided (must be exactly 8 digits)
-  if (phone && !/^[0-9]{8}$/.test(phone)) {
+  if (phone && !/^(03|70|71|76|78|79|81)[0-9]{6}$/.test(phone)) {
     return res.status(400).json({ error: 'رقم الهاتف يجب أن يكون 8 أرقام بالضبط' });
   }
   

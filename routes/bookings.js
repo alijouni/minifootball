@@ -70,9 +70,9 @@ router.post('/submit', (req, res) => {
   const { name, phone, date, start_time, end_time } = req.body;
   
   // Validate phone number (must be exactly 8 digits)
-  const phoneRegex = /^[0-9]{8}$/;
+  const phoneRegex = /^(03|70|71|76|78|79|81)[0-9]{6}$/;
   if (!phoneRegex.test(phone)) {
-    return res.status(400).json({ error: 'رقم الهاتف يجب أن يكون 8 أرقام بالضبط' });
+    return res.status(400).json({ error: 'رقم الهاتف يجب أن يكون 8 أرقام ويبدأ بأحد الأرقام المحددة (03, 70, 71, 76, 78, 79, 81)' });
   }
   
   // Check if user is blacklisted
