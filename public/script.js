@@ -54,6 +54,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+// --- Custom Alert/Confirm Functions ---
+function showCustomModal(title, message, isConfirm, callback) {
+    const modal = document.getElementById('custom-modal');
+    const modalTitle = document.getElementById('custom-modal-title');
+    const modalMessage = document.getElementById('custom-modal-message');
+    const okButton = document.getElementById('custom-modal-ok');
+    const cancelButton = document.getElementById('custom-modal-cancel');
+
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+
+    if (isConfirm) {
+        okButton.textContent = 'نعم'; // Yes
+        cancelButton.textContent = 'إلغاء'; // Cancel
+        cancelButton.style.display = 'inline-block';
+    } else {
+        okButton.textContent = 'موافق'; // OK
+        cancelButton.style.display = 'none';
+    }
+
+    modal.style.display = 'flex'; // Show the modal
+
+    return new Promise(resolve => {
+        okButton.onclick = () => {
+            modal.style.display = 'none';
+            if (isConfirm) {
+                resolve(true);
+            } else {
+                resolve();
+            }
+            if (callback) callback(true); // For confirm, pass true
+        };
+
+        cancelButton.onclick = () => {
+            modal.style.display = 'none';
+            resolve(false);
+            if (callback) callback(false); // For confirm, pass false
+        };
+
+        // Close modal if clicked outside
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                if (isConfirm) {
+                    resolve(false);
+                } else {
+                    resolve();
+                }
+                if (callback) callback(false); // For confirm, pass false
+            }
+        };
+    });
+}
+
+function showAlert(message, title = 'تنبيه') {
+    return showCustomModal(title, message, false);
+}
+
+function showConfirm(message, title = 'تأكيد') {
+    return showCustomModal(title, message, true);
+}
+
+// --- End Custom Alert/Confirm Functions ---
+
     // Load settings from server
     function loadSettings() {
         fetch('/api/settings')
@@ -169,8 +233,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleBookingSubmission(e) {
         e.preventDefault();
         
-        if (!selectedSlot) {
-            alert('يرجى اختيار وقت أولاً');
+       if (!selectedSlot) {
+            showAlert('يرجى اختيار وقت أولاً', 'خطأ في الحجز');
             return;
         }
         
@@ -185,14 +249,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Validate form
         if (!bookingData.name || !bookingData.phone) {
-            alert('يرجى ملء جميع الحقول');
+            showAlert('يرجى ملء جميع الحقول', 'خطأ في الإدخال');
             return;
         }
         
         // Validate phone number (must be exactly 8 digits)
         const phoneRegex = /^[0-9]{8}$/;
         if (!phoneRegex.test(bookingData.phone)) {
-            alert('رقم الهاتف يجب أن يكون 8 أرقام بالضبط');
+            showAlert('رقم الهاتف يجب أن يكون 8 أرقام بالضبط', 'خطأ في رقم الهاتف');
             return;
         }
         
@@ -216,9 +280,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.error || 'حدث خطأ غير متوقع');
             }
         })
-        .catch(error => {
+         .catch(error => {
             console.error('Error submitting booking:', error);
-            alert('حدث خطأ في الإرسال: ' + error.message);
+            showAlert('حدث خطأ في الإرسال: ' + error.message, 'خطأ في الإرسال');
         })
         .finally(() => {
             submitButton.disabled = false;
@@ -350,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const password = document.getElementById('login-password').value;
         
         if (!username || !password) {
-            alert('يرجى ملء جميع الحقول');
+            showAlert('يرجى ملء جميع الحقول', 'خطأ في الإدخال');
             return;
         }
         
@@ -388,14 +452,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data && data.message) {
                 // Manager login successful
                 window.location.href = '/manager';
-            } else if (data) {
-                // Neither admin nor manager
-                alert('بيانات تسجيل الدخول غير صحيحة');
-            }
+             } else if (data) {
+                    // Neither admin nor manager
+                    showAlert('بيانات تسجيل الدخول غير صحيحة', 'خطأ في تسجيل الدخول');
+                }
         })
-        .catch(error => {
+       .catch(error => {
             console.error('Login error:', error);
-            alert('حدث خطأ في تسجيل الدخول');
+            showAlert('حدث خطأ في تسجيل الدخول', 'خطأ');
         })
         .finally(() => {
             button.disabled = false;

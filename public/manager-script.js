@@ -63,6 +63,69 @@ document.addEventListener('DOMContentLoaded', function() {
         reportDate.value = today;
     }
     
+// --- Custom Alert/Confirm Functions (Add these to manager-script.js) ---
+function showCustomModal(title, message, isConfirm, callback) {
+    const modal = document.getElementById('custom-modal');
+    const modalTitle = document.getElementById('custom-modal-title');
+    const modalMessage = document.getElementById('custom-modal-message');
+    const okButton = document.getElementById('custom-modal-ok');
+    const cancelButton = document.getElementById('custom-modal-cancel');
+
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+
+    if (isConfirm) {
+        okButton.textContent = 'نعم'; // Yes
+        cancelButton.textContent = 'إلغاء'; // Cancel
+        cancelButton.style.display = 'inline-block';
+    } else {
+        okButton.textContent = 'موافق'; // OK
+        cancelButton.style.display = 'none';
+    }
+
+    modal.style.display = 'flex'; // Show the modal
+
+    return new Promise(resolve => {
+        okButton.onclick = () => {
+            modal.style.display = 'none';
+            if (isConfirm) {
+                resolve(true);
+            } else {
+                resolve();
+            }
+            if (callback) callback(true); // For confirm, pass true
+        };
+
+        cancelButton.onclick = () => {
+            modal.style.display = 'none';
+            resolve(false);
+            if (callback) callback(false); // For confirm, pass false
+        };
+
+        // Close modal if clicked outside
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                if (isConfirm) {
+                    resolve(false);
+                } else {
+                    resolve();
+                }
+                if (callback) callback(false); // For confirm, pass false
+            }
+        };
+    });
+}
+
+function showAlert(message, title = 'تنبيه') {
+    return showCustomModal(title, message, false);
+}
+
+function showConfirm(message, title = 'تأكيد') {
+    return showCustomModal(title, message, true);
+}
+// --- End Custom Alert/Confirm Functions ---
+
     // Check authentication status
     function checkAuthStatus() {
         fetch('/api/auth/manager/check')
@@ -99,12 +162,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentManager = data.user;
                 showDashboard();
             } else {
-                alert('خطأ في تسجيل الدخول: ' + (data.error || 'بيانات خاطئة'));
+                showAlert('خطأ في تسجيل الدخول: ' + (data.error || 'بيانات خاطئة'), 'خطأ في تسجيل الدخول');
             }
         })
         .catch(error => {
             console.error('Login error:', error);
-            alert('حدث خطأ في تسجيل الدخول');
+            showAlert('حدث خطأ في تسجيل الدخول', 'خطأ');
         });
     }
     
@@ -240,59 +303,63 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Mark as paid
     window.markAsPaid = function(bookingId) {
-        if (!confirm('هل أنت متأكد من تأكيد الدفع؟')) return;
-        
-        fetch(`/api/manager/mark-paid/${bookingId}`, { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message) {
-                    alert('تم تأكيد الدفع بنجاح');
-                    loadSchedule();
-                    loadDashboardStats();
-                } else {
-                    alert('حدث خطأ: ' + (data.error || 'خطأ غير محدد'));
-                }
-            })
-            .catch(error => {
-                console.error('Error marking as paid:', error);
-                alert('حدث خطأ في تأكيد الدفع');
-            });
+        showConfirm('هل أنت متأكد من تأكيد الدفع؟').then(result => {
+            if (result) {
+                fetch(`/api/manager/mark-paid/${bookingId}`, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.message) {
+                            showAlert('تم تأكيد الدفع بنجاح', 'نجاح');
+                            loadSchedule();
+                            loadDashboardStats();
+                        } else {
+                            showAlert('حدث خطأ: ' + (data.error || 'خطأ غير محدد'), 'خطأ');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error marking as paid:', error);
+                        showAlert('حدث خطأ في تأكيد الدفع', 'خطأ');
+                    });
+            }
+        });
     };
     
     // Mark all as paid
     window.markAllPaid = function() {
-        if (!confirm('هل أنت متأكد من تأكيد دفع جميع مباريات اليوم؟')) return;
-        
-        const today = new Date().toISOString().split('T')[0];
-        
-        fetch('/api/manager/mark-all-paid', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ date: today })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.message) {
-                alert(`تم تأكيد دفع ${data.count} مباراة بنجاح`);
-                loadSchedule();
-                loadDashboardStats();
-            } else {
-                alert('حدث خطأ: ' + (data.error || 'خطأ غير محدد'));
+        showConfirm('هل أنت متأكد من تأكيد دفع جميع مباريات اليوم؟').then(result => {
+            if (result) {
+                const today = new Date().toISOString().split('T')[0];
+                
+                fetch('/api/manager/mark-all-paid', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date: today })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        showAlert(`تم تأكيد دفع ${data.count} مباراة بنجاح`, 'نجاح');
+                        loadSchedule();
+                        loadDashboardStats();
+                    } else {
+                        showAlert('حدث خطأ: ' + (data.error || 'خطأ غير محدد'), 'خطأ');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking all as paid:', error);
+                    showAlert('حدث خطأ في تأكيد المدفوعات', 'خطأ');
+                });
             }
-        })
-        .catch(error => {
-            console.error('Error marking all as paid:', error);
-            alert('حدث خطأ في تأكيد المدفوعات');
         });
     };
     
     // Generate report
     function generateReport() {
-        const period = reportPeriod.value;
-        const date = reportDate.value;
+        const period = document.getElementById('report-period').value;
+        const date = document.getElementById('report-date').value;
         
         if (!date) {
-            alert('يرجى اختيار تاريخ');
+            showAlert('يرجى اختيار تاريخ', 'خطأ في الإدخال');
             return;
         }
         
@@ -303,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error generating report:', error);
-                alert('حدث خطأ في إنشاء التقرير');
+                showAlert('حدث خطأ في إنشاء التقرير', 'خطأ');
             });
     }
     
@@ -350,4 +417,4 @@ document.addEventListener('DOMContentLoaded', function() {
             loadDashboardStats();
         }
     }, 300000); // 5 minutes
-}); 
+});
