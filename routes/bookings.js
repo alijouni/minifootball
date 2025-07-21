@@ -2,7 +2,7 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const moment = require('moment');
 const router = express.Router();
-
+const telegramService = require('../services/telegramService'); // Adjust path as needed
 const db = new sqlite3.Database('./football_playground.db');
 
 // Helper function to generate time slots
@@ -102,8 +102,23 @@ router.post('/submit', (req, res) => {
           return res.status(500).json({ error: 'Database error' });
         }
         
-        res.json({ message: 'تم إرسال طلبك بنجاح' });
-      });
+        telegramService.notifyAdminAndManagerTelegram({
+                name: name,
+                phone: phone,
+                date: date,
+                start_time: start_time,
+                end_time: end_time
+            })
+            .then(result => {
+                console.log('Telegram notification initiated:', result);
+            })
+            .catch(telegramError => {
+                console.error('Error sending Telegram notification:', telegramError);
+                // IMPORTANT: Do NOT block the booking confirmation even if Telegram notification fails
+            });
+
+            res.json({ message: 'تم إرسال طلبك بنجاح. سيتم التواصل معك قريباً لتأكيد الحجز.' });
+          });
     });
   });
 });
