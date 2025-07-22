@@ -69,6 +69,13 @@ router.get('/slots/:date', (req, res) => {
 router.post('/submit', (req, res) => {
   const { name, phone, date, start_time, end_time } = req.body;
   
+ // New: Validate name to contain only letters (Arabic/English) and spaces
+  const nameRegex = /^[\u0600-\u06FFa-zA-Z\s]+$/;
+  if (!nameRegex.test(name)) {
+    return res.status(400).json({ error: 'الاسم يجب أن يحتوي على حروف أبجدية فقط ومسافات.' });
+  }
+
+
   // Validate phone number (must be exactly 8 digits)
   const phoneRegex = /^[0-9]{8}$/;
   if (!phoneRegex.test(phone)) {
@@ -84,41 +91,54 @@ router.post('/submit', (req, res) => {
     if (blacklisted) {
       return res.status(403).json({ error: 'You are not allowed to make bookings' });
     }
-    
-    // Check if slot is still available
-    db.get('SELECT * FROM bookings WHERE date = ? AND start_time = ? AND status != "cancelled"', [date, start_time], (err, existing) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
-      }
-      
-      if (existing) {
-        return res.status(400).json({ error: 'This slot is no longer available' });
-      }
-      
-      // Insert booking
-      db.run('INSERT INTO bookings (name, phone, date, start_time, end_time) VALUES (?, ?, ?, ?, ?)', 
-        [name, phone, date, start_time, end_time], (err) => {
+
+    // New check: Ensure user has only one booking per day based on phone number
+    db.get('SELECT * FROM bookings WHERE phone = ? AND date = ? AND status != "cancelled"', 
+      [phone, date], (err, existingUserBooking) => {
         if (err) {
           return res.status(500).json({ error: 'Database error' });
         }
         
-        telegramService.notifyAdminAndManagerTelegram({
-                name: name,
-                phone: phone,
-                date: date,
-                start_time: start_time,
-                end_time: end_time
-            })
-            .then(result => {
-                console.log('Telegram notification initiated:', result);
-            })
-            .catch(telegramError => {
-                console.error('Error sending Telegram notification:', telegramError);
-                // IMPORTANT: Do NOT block the booking confirmation even if Telegram notification fails
-            });
+        if (existingUserBooking) {
+          return res.status(400).json({ error: 'لديك حجز واحد بالفعل في هذا التاريخ باستخدام رقم الهاتف هذا. لا يمكن إجراء أكثر من حجز واحد في اليوم.' });
+        }
+        
+        // Original check: Check if slot is still available
+        db.get('SELECT * FROM bookings WHERE date = ? AND start_time = ? AND status != "cancelled"', [date, start_time], (err, existingSlot) => {
+          if (err) {
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          if (existingSlot) {
+            return res.status(400).json({ error: 'هذا الموعد غير متاح حالياً.' });
+          }
+          
+          // Insert booking
+          db.run('INSERT INTO bookings (name, phone, date, start_time, end_time) VALUES (?, ?, ?, ?, ?)', 
+            [name, phone, date, start_time, end_time], (err) => {
+            if (err) {
+              return res.status(500).json({ error: 'Database error' });
+            }
+            
+            telegramService.notifyAdminAndManagerTelegram({
+                    name: name,
+                    phone: phone,
+                    date: date,
+                    start_time: start_time,
+                    end_time: end_time
+                })
+                .then(result => {
+                    console.log('Telegram notification initiated:', result);
+                })
+                .catch(telegramError => {
+                    console.error('Error sending Telegram notification:', telegramError);
+                    // IMPORTANT: Do NOT block the booking confirmation even if Telegram notification fails
+                });
 
-            res.json({ message: 'تم إرسال طلبك بنجاح. سيتم التواصل معك قريباً لتأكيد الحجز.' });
-          });
+                // Ensure an explicit return here for the success path
+                return res.json({ message: 'تم إرسال طلبك بنجاح. سيتم التواصل معك قريباً لتأكيد الحجز.' });
+              });
+        });
     });
   });
 });
@@ -136,4 +156,4 @@ router.get('/status/:phone', (req, res) => {
   });
 });
 
-module.exports = router; 
+module.exports = router;

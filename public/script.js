@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const bookingFormElement = document.getElementById('booking-form-element');
     const successMessage = document.getElementById('success-message');
     const whatsappButton = document.getElementById('whatsapp-button');
-    
+     const customerPhoneInput = document.getElementById('customer-phone');
     // Set today as default date
     const today = new Date().toISOString().split('T')[0];
     dateInput.value = today;
@@ -51,6 +51,18 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.target === loginModal) {
                 hideLoginModal();
             }
+        });
+    }
+
+     if (customerPhoneInput) {
+        customerPhoneInput.addEventListener('invalid', function() {
+            // Set a custom validation message when the input is invalid
+            this.setCustomValidity('الرجاء إدخال رقم هاتف صحيح مكون من 8 أرقام (مثال: 03123456).');
+        });
+
+        customerPhoneInput.addEventListener('input', function() {
+            // Clear the custom validity message when the user starts typing
+            this.setCustomValidity('');
         });
     }
     
@@ -230,7 +242,7 @@ function showConfirm(message, title = 'تأكيد') {
     }
     
     // Handle booking form submission
-    function handleBookingSubmission(e) {
+ function handleBookingSubmission(e) {
         e.preventDefault();
         
        if (!selectedSlot) {
@@ -250,6 +262,13 @@ function showConfirm(message, title = 'تأكيد') {
         // Validate form
         if (!bookingData.name || !bookingData.phone) {
             showAlert('يرجى ملء جميع الحقول', 'خطأ في الإدخال');
+            return;
+        }
+
+        // New: Validate name to contain only letters (Arabic/English) and spaces
+        const nameRegex = /^[\u0600-\u06FFa-zA-Z\s]+$/;
+        if (!nameRegex.test(bookingData.name)) {
+            showAlert('الاسم يجب أن يحتوي على حروف أبجدية فقط ومسافات.', 'خطأ في الإدخال');
             return;
         }
         
