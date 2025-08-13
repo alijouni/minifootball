@@ -89,7 +89,7 @@ router.post('/submit', (req, res) => {
     }
     
     if (blacklisted) {
-      return res.status(403).json({ error: 'You are not allowed to make bookings' });
+      return res.status(403).json({ error: 'للأسف لا يمكنك تأكيد أي حجز يرجى مراجعة الادارة' });
     }
 
     // New check: Ensure user has only one booking per day based on phone number

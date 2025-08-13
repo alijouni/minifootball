@@ -20,7 +20,7 @@ router.get('/matches', requireManager, (req, res) => {
   
   db.all(`
     SELECT * FROM bookings 
-    WHERE date = ? AND status = 'confirmed'
+    WHERE date = ? AND status IN ('confirmed', 'pending')
     ORDER BY start_time ASC
   `, [today], (err, bookings) => {
     if (err) {
@@ -144,6 +144,19 @@ router.get('/bookings', requireManager, (req, res) => {
       return res.status(500).json({ error: 'Database error' });
     }
     res.json(bookings);
+  });
+});
+
+// Update booking status
+router.post('/bookings/:id/status', requireManager, (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  db.run('UPDATE bookings SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [status, id], (err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json({ message: 'Booking status updated successfully' });
   });
 });
 
