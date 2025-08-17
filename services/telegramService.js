@@ -5,6 +5,7 @@ const axios = require('axios'); // Changed from 'node-fetch'
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const ADMIN_TELEGRAM_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID;
 const MANAGER_TELEGRAM_CHAT_ID = process.env.MANAGER_TELEGRAM_CHAT_ID;
+const OWNER_TELEGRAM_CHAT_ID = process.env.OWNER_TELEGRAM_CHAT_ID;
 
 /**
  * Sends a message via Telegram Bot API using Axios.
@@ -69,6 +70,13 @@ async function notifyAdminAndManagerTelegram(bookingDetails) {
     // and have opted into your Twilio Sandbox for testing.
     const adminNum = ADMIN_TELEGRAM_CHAT_ID;
     const managerNum = MANAGER_TELEGRAM_CHAT_ID;
+    const ownerNum = OWNER_TELEGRAM_CHAT_ID;
+
+     if (ownerNum) {
+        await sendTelegramMessage(ownerNum, message);
+    } else {
+        console.warn('Owner Telegram chat ID not configured. Skipping admin notification.');
+    }
 
     if (adminNum) {
         await sendTelegramMessage(adminNum, message);
