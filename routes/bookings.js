@@ -23,6 +23,14 @@ function generateTimeSlots(startTime, endTime, duration) {
   return slots;
 }
 
+// Add admin authentication middleware
+const requireAdmin = (req, res, next) => {
+    if (!req.session.admin) {
+        return res.status(401).json({ error: 'Admin authentication required' });
+    }
+    next();
+};
+
 // Get available slots for a date
 router.get('/slots/:date', (req, res) => {
   const date = req.params.date;
@@ -141,6 +149,42 @@ router.post('/submit', (req, res) => {
         });
     });
   });
+});
+
+// New: Submit booking for admin (no telegram notification)
+router.post('/submit-admin', requireAdmin, (req, res) => {
+    const { name, phone, date, start_time, end_time, status } = req.body;
+
+    const nameRegex = /^[\u0600-\u06FFa-zA-Z\s]+$/;
+    if (!nameRegex.test(name)) {
+        return res.status(400).json({ error: 'الاسم يجب أن يحتوي على حروف أبجدية فقط ومسافات.' });
+    }
+
+    const phoneRegex = /^[0-9]{8}$/;
+    if (!phoneRegex.test(phone)) {
+        return res.status(400).json({ error: 'رقم الهاتف يجب أن يكون 8 أرقام بالضبط' });
+    }
+
+    // Check if slot is still available
+    db.get('SELECT * FROM bookings WHERE date = ? AND start_time = ? AND status != "cancelled"', [date, start_time], (err, existingSlot) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (existingSlot) {
+            return res.status(400).json({ error: 'هذا الموعد غير متاح حالياً.' });
+        }
+
+        // Insert booking with the specified status (confirmed by default for admin)
+        const bookingStatus = status || 'confirmed';
+        db.run('INSERT INTO bookings (name, phone, date, start_time, end_time, status, paid, collected_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [name, phone, date, start_time, end_time, bookingStatus, 1, 'Admin'], (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Database error' });
+            }
+            res.json({ message: 'تم إضافة الحجز بنجاح' });
+        });
+    });
 });
 
 // Get booking details (for checking status)

@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <!-- Login Modal -->
     <div id="login-modal" class="modal">
         <div class="modal-content">
             <h2>تسجيل الدخول - الإدارة</h2>
@@ -26,9 +25,7 @@
         </div>
     </div>
 
-    <!-- Admin Dashboard -->
     <div id="admin-dashboard" style="display: none;">
-        <!-- Header -->
         <header class="admin-header">
             <div class="container">
                 <div class="admin-logo">
@@ -42,25 +39,21 @@
             </div>
         </header>
 
-        <!-- Navigation -->
         <nav class="admin-nav">
             <div class="container">
                 <ul class="nav-tabs">
                     <li><a href="#dashboard" class="nav-link active">الرئيسية</a></li>
                     <li><a href="#bookings" class="nav-link">الحجوزات</a></li>
-                    <li><a href="#blacklist" class="nav-link">القائمة السوداء</a></li>
+                    <li><a href="#admin-booking" class="nav-link">حجز الإدارة</a></li> <li><a href="#blacklist" class="nav-link">القائمة السوداء</a></li>
                     <li><a href="#users" class="nav-link">إدارة المستخدمين</a></li>
                     <li><a href="#settings" class="nav-link">الإعدادات</a></li>
-
                     <li><a href="#reports" class="nav-link">التقارير</a></li>
                 </ul>
             </div>
         </nav>
 
-        <!-- Main Content -->
         <main class="admin-main">
             <div class="container">
-                <!-- Dashboard Tab -->
                 <div id="dashboard" class="tab-content active">
                     <h2>نظرة عامة</h2>
                     <div class="stats-grid">
@@ -103,7 +96,6 @@
                     </div>
                 </div>
 
-                <!-- Bookings Tab -->
                 <div id="bookings" class="tab-content">
                     <div class="tab-header">
                         <h2>إدارة الحجوزات</h2>
@@ -140,7 +132,43 @@
                     </div>
                 </div>
 
-                <!-- Blacklist Tab -->
+                <div id="admin-booking" class="tab-content">
+                    <h2>حجز ملعب للإدارة</h2>
+                    <div class="settings-container">
+                        <form id="admin-booking-form">
+                            <div class="form-group">
+                                <label for="admin-booking-name">الاسم:</label>
+                                <input type="text" id="admin-booking-name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="admin-booking-phone">رقم الهاتف (8 أرقام):</label>
+                                <input type="tel" id="admin-booking-phone" name="phone" pattern="[0-9]{8}" minlength="8" maxlength="8" placeholder="مثال: 12345678" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="admin-booking-date">التاريخ:</label>
+                                <input type="date" id="admin-booking-date" name="date" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="admin-booking-start-time">وقت البداية:</label>
+                                <input type="time" id="admin-booking-start-time" name="start_time" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="admin-booking-end-time">وقت النهاية:</label>
+                                <input type="time" id="admin-booking-end-time" name="end_time" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="admin-booking-status">الحالة:</label>
+                                <select id="admin-booking-status" name="status">
+                                    <option value="confirmed">مؤكد</option>
+                                    <option value="pending">معلق</option>
+                                    <option value="cancelled">ملغى</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary">إضافة حجز</button>
+                        </form>
+                    </div>
+                </div>
+
                 <div id="blacklist" class="tab-content">
                     <div class="tab-header">
                         <h2>القائمة السوداء</h2>
@@ -166,7 +194,6 @@
                     </div>
                 </div>
 
-                <!-- Users Management Tab -->
                 <div id="users" class="tab-content">
                     <h2>إدارة المستخدمين</h2>
                     <div class="users-management">
@@ -222,7 +249,6 @@
                     </div>
                 </div>
 
-                <!-- Settings Tab -->
                 <div id="settings" class="tab-content">
                     <h2>الإعدادات</h2>
                     <div class="settings-container">
@@ -278,7 +304,6 @@
 
 
 
-                <!-- Reports Tab -->
                 <div id="reports" class="tab-content">
                     <h2>التقارير</h2>
                     <div class="reports-container">
@@ -319,7 +344,6 @@
         </main>
     </div>
 
-    <!-- Modals -->
     <div id="blacklist-modal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -354,4 +378,4 @@
     </div>
 </div>
 </body>
-</html> 
+</html>
