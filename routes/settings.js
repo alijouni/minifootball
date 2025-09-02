@@ -1,100 +1,68 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const router = express.Router();
+const { Setting } = require('../database/models');
 
-const db = new sqlite3.Database('./football_playground.db');
+const requireAdmin = (req, res, next) => {
+  if (!req.session.admin) {
+    return res.status(401).json({ error: 'Admin authentication required' });
+  }
+  next();
+};
 
-// Get all settings
-router.get('/', (req, res) => {
-  db.all('SELECT * FROM settings', (err, settings) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
-    }
-    
+router.get('/', async (req, res) => {
+  try {
+    const settings = await Setting.find();
     const settingsMap = {};
     settings.forEach(setting => {
       settingsMap[setting.key] = setting.value;
     });
-    
     res.json(settingsMap);
-  });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
-// Get specific setting
-router.get('/:key', (req, res) => {
-  const { key } = req.params;
-  
-  db.get('SELECT value FROM settings WHERE key = ?', [key], (err, setting) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
-    }
+router.get('/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const setting = await Setting.findOne({ key });
     
     if (!setting) {
       return res.status(404).json({ error: 'Setting not found' });
     }
     
     res.json({ value: setting.value });
-  });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
-// Update setting (admin only)
-router.post('/:key', (req, res) => {
-  // Check if admin is authenticated
-  if (!req.session.admin) {
-    return res.status(401).json({ error: 'Admin authentication required' });
-  }
-  
-  const { key } = req.params;
-  const { value } = req.body;
-  
-  db.run('UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?', [value, key], (err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
-    }
-    
+router.post('/:key', requireAdmin, async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { value } = req.body;
+    await Setting.findOneAndUpdate({ key }, { value, updated_at: new Date() }, { upsert: true });
     res.json({ message: 'Setting updated successfully' });
-  });
-});
-
-// Update multiple settings at once (admin only)
-router.post('/', (req, res) => {
-  // Check if admin is authenticated
-  if (!req.session.admin) {
-    return res.status(401).json({ error: 'Admin authentication required' });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
   }
-  
-  const settings = req.body;
-  
-  db.serialize(() => {
-    db.run('BEGIN TRANSACTION');
-    
-    let hasError = false;
-    let completed = 0;
-    const total = Object.keys(settings).length;
-    
-    if (total === 0) {
-      return res.status(400).json({ error: 'No settings provided' });
-    }
-    
-    Object.entries(settings).forEach(([key, value]) => {
-      db.run('UPDATE settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?', [value, key], (err) => {
-        if (err && !hasError) {
-          hasError = true;
-          db.run('ROLLBACK');
-          return res.status(500).json({ error: 'Database error' });
-        }
-        
-        completed++;
-        
-        if (completed === total) {
-          if (!hasError) {
-            db.run('COMMIT');
-            res.json({ message: 'Settings updated successfully' });
-          }
-        }
-      });
-    });
-  });
 });
 
-module.exports = router; 
+router.post('/', requireAdmin, async (req, res) => {
+  try {
+    const settings = req.body;
+    const operations = Object.entries(settings).map(([key, value]) => ({
+      updateOne: {
+        filter: { key },
+        update: { $set: { value, updated_at: new Date() } },
+        upsert: true
+      }
+    }));
+    await Setting.bulkWrite(operations);
+    res.json({ message: 'Settings updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+module.exports = router;

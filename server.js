@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const path = require('path');
 const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
+const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const moment = require('moment');
 
@@ -40,18 +40,16 @@ app.use(session({
   cookie: { secure: false }
 }));
 
-// Database connection
-const db = new sqlite3.Database('./football_playground.db');
-
-// Initialize database
-require('./database/init')(db);
+// MongoDB connection
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ MongoDB connected successfully'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/manager', require('./routes/manager'));
-
 app.use('/api/settings', require('./routes/settings'));
 
 // Serve static files
@@ -102,4 +100,4 @@ app.listen(PORT, () => {
   console.log(`👷 Manager panel: http://localhost:${PORT}/manager`);
 });
 
-module.exports = app; 
+module.exports = app;

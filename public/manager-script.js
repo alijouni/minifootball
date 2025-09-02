@@ -272,7 +272,7 @@ function showConfirm(message, title = 'تأكيد') {
     }
     
     // Display schedule
- function displaySchedule(matches) {
+    function displaySchedule(matches) {
         if (matches.length === 0) {
             scheduleGrid.innerHTML = '<div class="no-data">لا توجد مباريات في هذا التاريخ</div>';
             return;
@@ -292,15 +292,15 @@ function showConfirm(message, title = 'تأكيد') {
                 </div>
                 ${match.status === 'confirmed' && !match.paid ? `
                     <div class="schedule-actions">
-                        <button class="btn-success" onclick="markAsPaid(${match.id})">
+                        <button class="btn-success" onclick="markAsPaid('${match._id}')">
                             <i class="fas fa-check"></i> تأكيد الدفع
                         </button>
                     </div>
                 ` : ''}
                 ${match.status === 'pending' ? `
                     <div class="schedule-actions">
-                        <button class="btn-success" onclick="updateBookingStatus(${match.id}, 'confirmed')">قبول</button>
-                        <button class="btn-danger" onclick="updateBookingStatus(${match.id}, 'cancelled')">رفض</button>
+                        <button class="btn-success" onclick="updateBookingStatus('${match._id}', 'confirmed')">قبول</button>
+                        <button class="btn-danger" onclick="updateBookingStatus('${match._id}', 'cancelled')">رفض</button>
                     </div>
                 ` : ''}
             </div>
@@ -309,33 +309,33 @@ function showConfirm(message, title = 'تأكيد') {
     
 
     // Update booking status
-window.updateBookingStatus = function(id, status) {
-    showConfirm(`هل أنت متأكد من ${status === 'confirmed' ? 'قبول' : 'رفض'} هذا الحجز؟`).then(result => {
-        if (result) {
-            fetch(`/api/manager/bookings/${id}/status`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ status })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message) {
-                    showAlert('تم تحديث حالة الحجز بنجاح', 'نجاح');
-                    loadSchedule();
-                    loadDashboardStats();
-                } else {
-                    showAlert('خطأ: ' + (data.error || 'حدث خطأ غير متوقع'), 'خطأ في التحديث');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('حدث خطأ في التحديث', 'خطأ');
-            });
-        }
-    });
-};
+    window.updateBookingStatus = function(id, status) {
+        showConfirm(`هل أنت متأكد من ${status === 'confirmed' ? 'قبول' : 'رفض'} هذا الحجز؟`).then(result => {
+            if (result) {
+                fetch(`/api/manager/bookings/${id}/status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        showAlert('تم تحديث حالة الحجز بنجاح', 'نجاح');
+                        loadSchedule();
+                        loadDashboardStats();
+                    } else {
+                        showAlert('خطأ: ' + (data.error || 'حدث خطأ غير متوقع'), 'خطأ في التحديث');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('حدث خطأ في التحديث', 'خطأ');
+                });
+            }
+        });
+    };
 
     // Mark as paid
     window.markAsPaid = function(bookingId) {

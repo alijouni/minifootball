@@ -3,3 +3,5 @@ node_modules/
 dist/
 .env
 *.log
+database/cluster_user_pw.txt
+database/init_mongo_db.js

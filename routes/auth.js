@@ -1,44 +1,52 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const sqlite3 = require('sqlite3').verbose();
 const router = express.Router();
-
-const db = new sqlite3.Database('./football_playground.db');
+const { Admin, Manager } = require('../database/models');
 
 // Admin login
-router.post('/admin/login', (req, res) => {
+router.post('/admin/login', async (req, res) => {
   const { username, password } = req.body;
-  
-  db.get('SELECT * FROM admin WHERE username = ?', [username], (err, admin) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
-    }
+
+  try {
+    const admin = await Admin.findOne({ username });
     
+    // // --- DEBUGGING LOGS ---
+    // console.log('User found:', admin);
+    // if (admin) {
+    //     console.log('Stored hash:', admin.password_hash);
+    //     console.log('Provided password:', password);
+    // }
+    // --- END DEBUGGING LOGS ---
+
     if (!admin || !bcrypt.compareSync(password, admin.password_hash)) {
+      console.log('Login failed: Invalid credentials');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
-    req.session.admin = admin;
-    res.json({ message: 'Login successful', user: { id: admin.id, username: admin.username } });
-  });
+    req.session.admin = { id: admin._id, username: admin.username };
+    res.json({ message: 'Login successful', user: { id: admin._id, username: admin.username } });
+  } catch (err) {
+    console.error('Database error during login:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Manager login
-router.post('/manager/login', (req, res) => {
+router.post('/manager/login', async (req, res) => {
   const { username, password } = req.body;
-  
-  db.get('SELECT * FROM playground_managers WHERE username = ?', [username], (err, manager) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
-    }
-    
+
+  try {
+    const manager = await Manager.findOne({ username });
+
     if (!manager || !bcrypt.compareSync(password, manager.password_hash)) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    
-    req.session.manager = manager;
-    res.json({ message: 'Login successful', user: { id: manager.id, username: manager.username, name: manager.name } });
-  });
+
+    req.session.manager = { id: manager._id, username: manager.username, name: manager.name };
+    res.json({ message: 'Login successful', user: { id: manager._id, username: manager.username, name: manager.name } });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Check admin session
@@ -71,4 +79,4 @@ router.post('/manager/logout', (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
-module.exports = router; 
+module.exports = router;
