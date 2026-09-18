@@ -1,6 +1,6 @@
 import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { collection, query, where, orderBy, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, orderBy, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const tableBody = document.getElementById('bookingsTableBody');
 const dateDisplay = document.getElementById('currentDate');
@@ -81,9 +81,23 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 });
 
 // Make cancel function available globally for inline onclick handlers
-window.cancelBooking = function(bookingId) {
-    if(confirm("Are you sure you want to cancel this booking?")) {
-        alert(`Cancel logic for ${bookingId} will trigger a Firestore update here.`);
-        // You will implement the updateDoc logic here later
+window.cancelBooking = async function(bookingId) {
+    if(confirm("Are you sure you want to cancel this booking? The citizen will lose this time slot.")) {
+        try {
+            // Point to the specific booking document
+            const bookingRef = doc(db, 'bookings', bookingId);
+            
+            // Update the status field to 'cancelled'
+            await updateDoc(bookingRef, {
+                status: 'cancelled'
+            });
+            
+            // Refresh the table so the manager sees the updated status immediately
+            loadTodaysBookings(); 
+            
+        } catch (error) {
+            console.error("Error cancelling booking:", error);
+            alert("Failed to cancel the booking. Please check your connection and permissions.");
+        }
     }
 }

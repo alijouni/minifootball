@@ -1,7 +1,6 @@
 import { auth, db } from './firebase-config.js';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 const loginForm = document.getElementById('loginForm');
 const googleBtn = document.getElementById('googleLoginBtn');
 const errorText = document.getElementById('errorMessage');
@@ -9,15 +8,34 @@ const errorText = document.getElementById('errorMessage');
 // Centralized function to route users based on their role
 async function routeUser(user) {
     try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists() && (userDoc.data().role === 'manager' || userDoc.data().role === 'admin')) {
+        const userRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+            // If the user document doesn't exist (e.g., first-time Google Sign-In), create it
+            await setDoc(userRef, {
+                displayName: user.displayName || "Citizen",
+                phoneNumber: user.phoneNumber || "", // Google doesn't always provide phone numbers
+                email: user.email,
+                role: "citizen", // Default role
+                isActive: true,
+                createdAt: serverTimestamp()
+            });
+            // Send new citizens to the main portal
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // If the user exists, check their role for routing
+        const userData = userDoc.data();
+        if (userData.role === 'manager' || userData.role === 'admin') {
             window.location.href = 'manager.html';
         } else {
             window.location.href = 'index.html';
         }
     } catch (error) {
-        console.error("Error fetching user role:", error);
-        window.location.href = 'index.html'; // Fallback to citizen view
+        console.error("Error fetching or creating user role:", error);
+        window.location.href = 'index.html'; // Fallback
     }
 }
 
