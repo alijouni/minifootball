@@ -10,7 +10,9 @@ let currentUser = null;
 let currentUserProfile = null;
 let selectedSlotData = null;
 let currentPitchData = null;
-
+let currentMonthView = new Date(); // Tracks which month the calendar is showing
+let activeSelectedDate = new Date(); // Tracks which specific day the user clicked
+let monthlyBookingsCache = []; // Stores the current month's bookings to avoid excessive database reads
 // 1. Authentication Check & Profile Fetch
 onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -22,13 +24,117 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('logoutBtn').addEventListener('click', () => {
                 signOut(auth).then(() => window.location.href = 'login.html');
             });
-
-            loadTimeSlots();
+            activeSelectedDate.setHours(0,0,0,0); // Ensure time is stripped
+            loadMonthData(); // Builds calendar and places red dots
+            loadTimeSlots(); // Loads the slots for today by default
+            loadMyBookings();
             loadMyBookings(); // Add this line
         }
     } else {
         window.location.href = 'login.html';
     }
+});
+
+// --- CALENDAR LOGIC ---
+
+async function loadMonthData() {
+    // Find the first and last day of the currently viewed month
+    const startOfMonth = new Date(currentMonthView.getFullYear(), currentMonthView.getMonth(), 1);
+    const endOfMonth = new Date(currentMonthView.getFullYear(), currentMonthView.getMonth() + 1, 0, 23, 59, 59);
+
+    try {
+        // Fetch all bookings for this month to populate the red dots
+        const q = query(
+            collection(db, "bookings"),
+            where("startTime", ">=", startOfMonth),
+            where("startTime", "<=", endOfMonth)
+        );
+        const snapshot = await getDocs(q);
+        
+        monthlyBookingsCache = [];
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.status !== 'cancelled') {
+                monthlyBookingsCache.push(data.startTime.toDate());
+            }
+        });
+        
+        renderCalendar();
+    } catch (error) {
+        console.error("Error loading month data:", error);
+    }
+}
+
+function renderCalendar() {
+    const grid = document.getElementById('calendarGrid');
+    const monthYearDisplay = document.getElementById('monthYearDisplay');
+    grid.innerHTML = '';
+
+    const year = currentMonthView.getFullYear();
+    const month = currentMonthView.getMonth();
+    
+    monthYearDisplay.textContent = currentMonthView.toLocaleDateString('en-LB', { month: 'long', year: 'numeric' });
+
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    // Blank spaces for days before the 1st of the month
+    for (let i = 0; i < firstDayOfMonth; i++) {
+        const blank = document.createElement('div');
+        grid.appendChild(blank);
+    }
+
+    // Generate days
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateCell = document.createElement('div');
+        dateCell.className = 'calendar-day';
+        dateCell.textContent = day;
+
+        const thisCellDate = new Date(year, month, day);
+        thisCellDate.setHours(0,0,0,0);
+
+        // Disable past dates
+        if (thisCellDate < today) {
+            dateCell.classList.add('disabled');
+        } else {
+            // Check if this date has any bookings in our cache
+            const hasBookings = monthlyBookingsCache.some(b => 
+                b.getDate() === day && b.getMonth() === month && b.getFullYear() === year
+            );
+            
+            if (hasBookings) {
+                const dot = document.createElement('div');
+                dot.className = 'indicator';
+                dateCell.appendChild(dot);
+            }
+
+            // Handle Selection
+            if (thisCellDate.getTime() === activeSelectedDate.getTime()) {
+                dateCell.classList.add('selected');
+            }
+
+            dateCell.addEventListener('click', () => {
+                activeSelectedDate = new Date(thisCellDate);
+                renderCalendar(); // Re-render to update the green selected highlight
+                loadTimeSlots();  // Fetch the slots for the newly selected day
+            });
+        }
+        grid.appendChild(dateCell);
+    }
+}
+
+// Calendar Navigation Listeners
+document.getElementById('prevMonthBtn').addEventListener('click', () => {
+    currentMonthView.setMonth(currentMonthView.getMonth() - 1);
+    loadMonthData();
+});
+
+document.getElementById('nextMonthBtn').addEventListener('click', () => {
+    currentMonthView.setMonth(currentMonthView.getMonth() + 1);
+    loadMonthData();
 });
 
 // 2. Generate and Render Time Slots
@@ -78,16 +184,20 @@ async function loadTimeSlots() {
             curM = endM;
         }
 
-        // 4. Query today's existing bookings to disable taken slots
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
-        const todayEnd = new Date();
-        todayEnd.setHours(23, 59, 59, 999);
+        // 4. Query existing bookings for the SELECTED DATE to disable taken slots
+        const dayStart = new Date(activeSelectedDate);
+        dayStart.setHours(0, 0, 0, 0);
+        
+        const dayEnd = new Date(activeSelectedDate);
+        dayEnd.setHours(23, 59, 59, 999);
+
+        // Update the display text above the slots
+        document.getElementById('selectedDateDisplay').textContent = `Available Slots for ${activeSelectedDate.toLocaleDateString('en-LB', { weekday: 'short', month: 'short', day: 'numeric' })}`;
 
         const q = query(
             collection(db, "bookings"),
-            where("startTime", ">=", todayStart),
-            where("startTime", "<=", todayEnd)
+            where("startTime", ">=", dayStart), // Use dayStart, not todayStart
+            where("startTime", "<=", dayEnd)    // Use dayEnd, not todayEnd
         );
         const querySnapshot = await getDocs(q);
         
@@ -108,10 +218,10 @@ async function loadTimeSlots() {
         const slotPrice = currentPitchData.hourlyRate * 1.5;
 
         schedule.forEach(slot => {
-            const slotStart = new Date();
+           const slotStart = new Date(activeSelectedDate);
             slotStart.setHours(slot.startH, slot.startM, 0, 0);
             
-            const slotEnd = new Date();
+            const slotEnd = new Date(activeSelectedDate);
             slotEnd.setHours(slot.endH, slot.endM, 0, 0);
 
             const slotDiv = document.createElement('div');

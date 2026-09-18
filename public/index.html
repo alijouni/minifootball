@@ -19,11 +19,26 @@
 
     <main class="container">
         <h2>Book a Time Slot</h2>
-        <p>Select an available time for today:</p>
+        <div class="calendar-wrapper">
+            <div class="calendar-header">
+                <button id="prevMonthBtn">&lt;</button>
+                <h3 id="monthYearDisplay">Month Year</h3>
+                <button id="nextMonthBtn">&gt;</button>
+            </div>
+            <div class="calendar-days-header">
+                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+            </div>
+            <div id="calendarGrid" class="calendar-grid">
+                <!-- JavaScript will inject days here -->
+            </div>
+        </div>
+
+        <h3 id="selectedDateDisplay" style="margin-top: 1.5rem; margin-bottom: 1rem;">Available Slots</h3>
         
         <div class="time-slots" id="slots-container">
             <p>Please sign in to view availability.</p>
         </div>
+    
 
         <button id="confirmBookingBtn" class="btn-primary" disabled>Confirm Booking</button>
 
